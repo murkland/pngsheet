@@ -9,7 +9,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/nbarena/pngchunks"
+	"github.com/undernet/pngchunks"
 )
 
 type Info struct {

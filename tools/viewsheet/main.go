@@ -13,7 +13,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
-	"github.com/nbarena/pngsheet"
+	"github.com/undernet/pngsheet"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
