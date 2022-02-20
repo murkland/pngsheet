@@ -13,9 +13,9 @@ import (
 )
 
 type Info struct {
-	Palette    color.Palette
-	Frames     []Frame
-	Animations []Animation
+	SuggestedPalettes map[string]color.Palette
+	Frames            []Frame
+	Animations        []Animation
 }
 
 type Frame struct {
@@ -37,6 +37,7 @@ const (
 
 func LoadInfo(f io.Reader) (Info, error) {
 	var info Info
+	info.SuggestedPalettes = make(map[string]color.Palette)
 
 	pngr, err := pngchunks.NewReader(f)
 	if err != nil {
@@ -57,15 +58,18 @@ func LoadInfo(f io.Reader) (Info, error) {
 			if err != nil {
 				return info, err
 			}
-			plt := buf[bytes.IndexByte(buf, '\x00')+2:]
+			sepIdx := bytes.IndexByte(buf, '\x00')
+			plt := buf[sepIdx+2:]
+			var palette color.Palette
 			for {
 				c := plt[:4]
 				plt = plt[6:]
 				if len(plt) == 0 {
 					break
 				}
-				info.Palette = append(info.Palette, color.RGBA{c[0], c[1], c[2], c[3]})
+				palette = append(palette, color.RGBA{c[0], c[1], c[2], c[3]})
 			}
+			info.SuggestedPalettes[string(buf[:sepIdx])] = palette
 		case "zTXt":
 			buf, err := io.ReadAll(chunk)
 			if err != nil {
