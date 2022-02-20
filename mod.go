@@ -78,35 +78,17 @@ func LoadInfo(f io.Reader) (Info, error) {
 			var animation Animation
 			ctrlr := bytes.NewReader(buf[bytes.IndexByte(buf, '\x00')+2:])
 			for i := 0; ; i++ {
-				var left, top, right, bottom, originX, originY int16
-				if err := binary.Read(ctrlr, binary.LittleEndian, &left); err != nil {
+				var rawFrame struct {
+					Left, Top, Right, Bottom, OriginX, OriginY int16
+				}
+				if err := binary.Read(ctrlr, binary.LittleEndian, &rawFrame); err != nil {
 					if errors.Is(err, io.EOF) {
 						break
 					}
 					return info, err
 				}
 
-				if err := binary.Read(ctrlr, binary.LittleEndian, &top); err != nil {
-					return info, err
-				}
-
-				if err := binary.Read(ctrlr, binary.LittleEndian, &right); err != nil {
-					return info, err
-				}
-
-				if err := binary.Read(ctrlr, binary.LittleEndian, &bottom); err != nil {
-					return info, err
-				}
-
-				if err := binary.Read(ctrlr, binary.LittleEndian, &originX); err != nil {
-					return info, err
-				}
-
-				if err := binary.Read(ctrlr, binary.LittleEndian, &originY); err != nil {
-					return info, err
-				}
-
-				frame := Frame{int(left), int(top), int(right), int(bottom), int(originX), int(originY)}
+				frame := Frame{int(rawFrame.Left), int(rawFrame.Top), int(rawFrame.Right), int(rawFrame.Bottom), int(rawFrame.OriginX), int(rawFrame.OriginY)}
 				info.Frames = append(info.Frames, frame)
 
 				var delay uint8
