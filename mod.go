@@ -80,6 +80,9 @@ func LoadInfo(f io.Reader) (Info, error) {
 			for i := 0; ; i++ {
 				var rawFrame struct {
 					Left, Top, Right, Bottom, OriginX, OriginY int16
+
+					Delay  uint8
+					Action action
 				}
 				if err := binary.Read(ctrlr, binary.LittleEndian, &rawFrame); err != nil {
 					if errors.Is(err, io.EOF) {
@@ -91,22 +94,12 @@ func LoadInfo(f io.Reader) (Info, error) {
 				frame := Frame{int(rawFrame.Left), int(rawFrame.Top), int(rawFrame.Right), int(rawFrame.Bottom), int(rawFrame.OriginX), int(rawFrame.OriginY)}
 				info.Frames = append(info.Frames, frame)
 
-				var delay uint8
-				if err := binary.Read(ctrlr, binary.LittleEndian, &delay); err != nil {
-					return info, err
-				}
-
-				var a action
-				if err := binary.Read(ctrlr, binary.LittleEndian, &a); err != nil {
-					return info, err
-				}
-
-				for j := 0; j < int(delay); j++ {
+				for j := 0; j < int(rawFrame.Delay); j++ {
 					animation.Frames = append(animation.Frames, i)
 				}
 
-				if a != actionNext {
-					animation.IsLooping = a == actionLoop
+				if rawFrame.Action != actionNext {
+					animation.IsLooping = rawFrame.Action == actionLoop
 					info.Animations = append(info.Animations, animation)
 					animation = Animation{}
 				}
