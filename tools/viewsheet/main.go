@@ -46,7 +46,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	ebiten.RunGame(&game{fontFace: fontFace, origImg: pimg, info: info, palette: append(pimg.Palette, info.SuggestedPalettes["extra"]...)})
+	ebiten.RunGame(&game{fontFace: fontFace, origImg: pimg, info: info, palette: append(pimg.Palette, info.SuggestedPalettes["extra"]...), altPalette: info.SuggestedPalettes["alt"]})
 }
 
 func frame(anim pngsheet.Animation, t int) int {
@@ -68,9 +68,10 @@ func frame(anim pngsheet.Animation, t int) int {
 type game struct {
 	fontFace font.Face
 
-	origImg *image.Paletted
-	info    pngsheet.Info
-	palette color.Palette
+	origImg    *image.Paletted
+	info       pngsheet.Info
+	palette    color.Palette
+	altPalette color.Palette
 
 	paletteIdx int
 	elapsed    int
@@ -96,13 +97,18 @@ func (g *game) Draw(screen *ebiten.Image) {
 	text.Draw(screen, fmt.Sprintf("palette: %d\nanim: %d\nframe: %d", g.paletteIdx, g.animIdx, frameIdx-anim.Frames[0]), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
 }
 
-func (g *game) swapPalette(i int) {
+func (g *game) shiftPalette(i int) {
 	g.paletteIdx = i
 	g.origImg.Palette = g.palette[g.paletteIdx*16:]
 	for len(g.origImg.Palette) < 256 {
 		g.origImg.Palette = append(g.origImg.Palette, color.RGBA{})
 	}
 	g.img = ebiten.NewImageFromImage(g.origImg)
+}
+
+func (g *game) swapPalette() {
+	g.palette, g.altPalette = g.altPalette, g.palette
+	g.shiftPalette(g.paletteIdx)
 }
 
 func (g *game) Update() error {
@@ -114,7 +120,7 @@ func (g *game) Update() error {
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
-		g.swapPalette((g.paletteIdx + 1) % (len(g.palette) / 16))
+		g.shiftPalette((g.paletteIdx + 1) % (len(g.palette) / 16))
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
@@ -122,7 +128,7 @@ func (g *game) Update() error {
 		if i < 0 {
 			i += (len(g.palette) / 16)
 		}
-		g.swapPalette(i)
+		g.shiftPalette(i)
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
@@ -140,6 +146,10 @@ func (g *game) Update() error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
 		g.elapsed = 0
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyTab) {
+		g.swapPalette()
 	}
 
 	return nil
