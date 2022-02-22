@@ -26,9 +26,14 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	pimg, info, err := pngsheet.Load(f)
+	img, info, err := pngsheet.Load(f)
 	if err != nil {
 		log.Fatalf("%s", err)
+	}
+
+	var palette color.Palette
+	if pimg, ok := img.(*image.Paletted); ok {
+		palette = append(pimg.Palette, info.SuggestedPalettes["extra"]...)
 	}
 
 	tt, err := opentype.Parse(fonts.PressStart2P_ttf)
@@ -46,7 +51,7 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	ebiten.RunGame(&game{fontFace: fontFace, origImg: pimg, info: info, palette: append(pimg.Palette, info.SuggestedPalettes["extra"]...), altPalette: info.SuggestedPalettes["alt"]})
+	ebiten.RunGame(&game{fontFace: fontFace, origImg: img, info: info, palette: palette, altPalette: info.SuggestedPalettes["alt"]})
 }
 
 func frame(anim pngsheet.Animation, t int) int {
@@ -68,7 +73,7 @@ func frame(anim pngsheet.Animation, t int) int {
 type game struct {
 	fontFace font.Face
 
-	origImg    *image.Paletted
+	origImg    image.Image
 	info       pngsheet.Info
 	palette    color.Palette
 	altPalette color.Palette
@@ -94,16 +99,21 @@ func (g *game) Draw(screen *ebiten.Image) {
 	opts := &ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(float64(288/2-frame.OriginX), float64(256/2-frame.OriginY))
 	screen.DrawImage(g.img.SubImage(image.Rect(frame.Left, frame.Top, frame.Right, frame.Bottom)).(*ebiten.Image), opts)
-	text.Draw(screen, fmt.Sprintf("palette: %d\nanim: %d\nframe: %d", g.paletteIdx, g.animIdx, frameIdx-anim.Frames[0]), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
+	palInfo := "not paletted"
+	if g.palette != nil {
+		palInfo = fmt.Sprintf("palette: %03d/%03d", g.paletteIdx+1, len(g.palette)/16)
+	}
+	text.Draw(screen, fmt.Sprintf("%s\nanim: %d\nframe: %d", palInfo, g.animIdx, frameIdx-anim.Frames[0]), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
 }
 
 func (g *game) shiftPalette(i int) {
+	pimg := g.origImg.(*image.Paletted)
 	g.paletteIdx = i
-	g.origImg.Palette = g.palette[g.paletteIdx*16:]
-	for len(g.origImg.Palette) < 256 {
-		g.origImg.Palette = append(g.origImg.Palette, color.RGBA{})
+	pimg.Palette = g.palette[g.paletteIdx*16:]
+	for len(pimg.Palette) < 256 {
+		pimg.Palette = append(pimg.Palette, color.RGBA{})
 	}
-	g.img = ebiten.NewImageFromImage(g.origImg)
+	g.img = ebiten.NewImageFromImage(pimg)
 }
 
 func (g *game) swapPalette() {
@@ -120,15 +130,23 @@ func (g *game) Update() error {
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyDown) {
-		g.shiftPalette((g.paletteIdx + 1) % (len(g.palette) / 16))
+		if g.palette != nil {
+			i := (g.paletteIdx + 1) % (len(g.palette) / 16)
+			if i < 0 {
+				i += (len(g.palette) / 16)
+			}
+			g.shiftPalette(i)
+		}
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
-		i := (g.paletteIdx - 1) % (len(g.palette) / 16)
-		if i < 0 {
-			i += (len(g.palette) / 16)
+		if g.palette != nil {
+			i := (g.paletteIdx - 1) % (len(g.palette) / 16)
+			if i < 0 {
+				i += (len(g.palette) / 16)
+			}
+			g.shiftPalette(i)
 		}
-		g.shiftPalette(i)
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyRight) {
@@ -149,7 +167,9 @@ func (g *game) Update() error {
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyTab) {
-		g.swapPalette()
+		if g.palette != nil {
+			g.swapPalette()
+		}
 	}
 
 	return nil

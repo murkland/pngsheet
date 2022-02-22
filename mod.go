@@ -120,7 +120,7 @@ func LoadInfo(f io.Reader) (Info, error) {
 
 var ErrInvalidFormat = errors.New("invalid format")
 
-func Load(f io.ReadSeeker) (*image.Paletted, Info, error) {
+func Load(f io.ReadSeeker) (image.Image, Info, error) {
 	info, err := LoadInfo(f)
 	if err != nil {
 		return nil, Info{}, err
@@ -135,10 +135,5 @@ func Load(f io.ReadSeeker) (*image.Paletted, Info, error) {
 		return nil, Info{}, err
 	}
 
-	pimg, ok := img.(*image.Paletted)
-	if !ok {
-		return nil, Info{}, ErrInvalidFormat
-	}
-
-	return pimg, info, err
+	return img, info, err
 }
