@@ -57,9 +57,9 @@ func main() {
 	ebiten.RunGame(&game{fontFace: fontFace, origImg: img, info: info, palette: palette, altPalette: altPalette})
 }
 
-func frame(anim pngsheet.Animation, t int) int {
+func frame(anim *pngsheet.Animation, t int) *pngsheet.Frame {
 	if len(anim.Frames) == 0 {
-		return 0
+		return nil
 	}
 
 	if t >= len(anim.Frames) {
@@ -77,7 +77,7 @@ type game struct {
 	fontFace font.Face
 
 	origImg    image.Image
-	info       pngsheet.Info
+	info       *pngsheet.Info
 	palette    color.Palette
 	altPalette color.Palette
 
@@ -94,8 +94,7 @@ func (g *game) Layout(outsideWidth int, outsideHeight int) (int, int) {
 
 func (g *game) Draw(screen *ebiten.Image) {
 	anim := g.info.Animations[g.animIdx]
-	frameIdx := frame(anim, g.elapsed)
-	frame := g.info.Frames[frameIdx]
+	frame := frame(anim, g.elapsed)
 
 	screen.Fill(color.RGBA{0xff, 0x00, 0xff, 0xff})
 
@@ -106,7 +105,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 	if g.palette != nil {
 		palInfo = fmt.Sprintf("palette: %03d/%03d", g.paletteIdx+1, len(g.palette)/16)
 	}
-	text.Draw(screen, fmt.Sprintf("%s\nanim: %d\nframe: %d", palInfo, g.animIdx, frameIdx-anim.Frames[0]), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
+	text.Draw(screen, fmt.Sprintf("%s\nanim: %d\nframe: %d", palInfo, g.animIdx, frame.Index), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
 }
 
 func (g *game) shiftPalette(i int) {

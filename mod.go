@@ -14,17 +14,18 @@ import (
 
 type Info struct {
 	SuggestedPalettes map[string]color.Palette
-	Frames            []Frame
-	Animations        []Animation
+	Frames            []*Frame
+	Animations        []*Animation
 }
 
 type Frame struct {
+	Index  int
 	Rect   image.Rectangle
 	Origin image.Point
 }
 
 type Animation struct {
-	Frames    []int
+	Frames    []*Frame
 	IsLooping bool
 }
 
@@ -36,13 +37,13 @@ const (
 	actionStop action = 2
 )
 
-func LoadInfo(f io.Reader) (Info, error) {
-	var info Info
+func LoadInfo(f io.Reader) (*Info, error) {
+	info := &Info{}
 	info.SuggestedPalettes = make(map[string]color.Palette)
 
 	pngr, err := pngchunks.NewReader(f)
 	if err != nil {
-		return info, err
+		return nil, err
 	}
 
 	for {
@@ -57,7 +58,7 @@ func LoadInfo(f io.Reader) (Info, error) {
 		case "sPLT":
 			buf, err := io.ReadAll(chunk)
 			if err != nil {
-				return info, err
+				return nil, err
 			}
 			sepIdx := bytes.IndexByte(buf, '\x00')
 			plt := buf[sepIdx+2:]
@@ -75,10 +76,11 @@ func LoadInfo(f io.Reader) (Info, error) {
 		case "zTXt":
 			buf, err := io.ReadAll(chunk)
 			if err != nil {
-				return info, err
+				return nil, err
 			}
-			var animation Animation
+			animation := &Animation{}
 			ctrlr := bytes.NewReader(buf[bytes.IndexByte(buf, '\x00')+2:])
+			var startIndex int
 			for i := 0; ; i++ {
 				var rawFrame struct {
 					Left, Top, Right, Bottom, OriginX, OriginY int16
@@ -90,33 +92,35 @@ func LoadInfo(f io.Reader) (Info, error) {
 					if errors.Is(err, io.EOF) {
 						break
 					}
-					return info, err
+					return nil, err
 				}
 
-				frame := Frame{
+				frame := &Frame{
+					i - startIndex,
 					image.Rectangle{image.Point{int(rawFrame.Left), int(rawFrame.Top)}, image.Point{int(rawFrame.Right), int(rawFrame.Bottom)}},
 					image.Point{int(rawFrame.OriginX), int(rawFrame.OriginY)},
 				}
 				info.Frames = append(info.Frames, frame)
 
 				for j := 0; j < int(rawFrame.Delay); j++ {
-					animation.Frames = append(animation.Frames, i)
+					animation.Frames = append(animation.Frames, frame)
 				}
 
 				if rawFrame.Action != actionNext {
 					animation.IsLooping = rawFrame.Action == actionLoop
 					info.Animations = append(info.Animations, animation)
-					animation = Animation{}
+					startIndex = i + 1
+					animation = &Animation{}
 				}
 			}
 		default:
 			if _, err := io.Copy(io.Discard, chunk); err != nil {
-				return info, err
+				return nil, err
 			}
 		}
 
 		if err := chunk.Close(); err != nil {
-			return info, err
+			return nil, err
 		}
 	}
 
@@ -125,19 +129,19 @@ func LoadInfo(f io.Reader) (Info, error) {
 
 var ErrInvalidFormat = errors.New("invalid format")
 
-func Load(f io.ReadSeeker) (image.Image, Info, error) {
+func Load(f io.ReadSeeker) (image.Image, *Info, error) {
 	info, err := LoadInfo(f)
 	if err != nil {
-		return nil, Info{}, err
+		return nil, nil, err
 	}
 
 	if _, err := f.Seek(0, os.SEEK_SET); err != nil {
-		return nil, Info{}, err
+		return nil, nil, err
 	}
 
 	img, _, err := image.Decode(f)
 	if err != nil {
-		return nil, Info{}, err
+		return nil, nil, err
 	}
 
 	return img, info, err
