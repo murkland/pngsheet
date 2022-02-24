@@ -36,6 +36,8 @@ func main() {
 		palette = append(pimg.Palette, info.SuggestedPalettes["extra"]...)
 	}
 
+	altPalette := info.SuggestedPalettes["alt"]
+
 	tt, err := opentype.Parse(fonts.PressStart2P_ttf)
 	if err != nil {
 		log.Fatalf("%s", err)
@@ -51,7 +53,8 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	ebiten.RunGame(&game{fontFace: fontFace, origImg: img, info: info, palette: palette, altPalette: info.SuggestedPalettes["alt"]})
+	log.Printf("palette size: %d, alt palette size: %d", len(palette), len(altPalette))
+	ebiten.RunGame(&game{fontFace: fontFace, origImg: img, info: info, palette: palette, altPalette: altPalette})
 }
 
 func frame(anim pngsheet.Animation, t int) int {

@@ -63,11 +63,12 @@ func LoadInfo(f io.Reader) (Info, error) {
 			var palette color.Palette
 			for {
 				c := plt[:4]
+				palette = append(palette, color.RGBA{c[0], c[1], c[2], c[3]})
+
 				plt = plt[6:]
 				if len(plt) == 0 {
 					break
 				}
-				palette = append(palette, color.RGBA{c[0], c[1], c[2], c[3]})
 			}
 			info.SuggestedPalettes[string(buf[:sepIdx])] = palette
 		case "zTXt":
