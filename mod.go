@@ -19,7 +19,8 @@ type Info struct {
 }
 
 type Frame struct {
-	Left, Top, Right, Bottom, OriginX, OriginY int
+	Rect   image.Rectangle
+	Origin image.Point
 }
 
 type Animation struct {
@@ -92,7 +93,10 @@ func LoadInfo(f io.Reader) (Info, error) {
 					return info, err
 				}
 
-				frame := Frame{int(rawFrame.Left), int(rawFrame.Top), int(rawFrame.Right), int(rawFrame.Bottom), int(rawFrame.OriginX), int(rawFrame.OriginY)}
+				frame := Frame{
+					image.Rectangle{image.Point{int(rawFrame.Left), int(rawFrame.Top)}, image.Point{int(rawFrame.Right), int(rawFrame.Bottom)}},
+					image.Point{int(rawFrame.OriginX), int(rawFrame.OriginY)},
+				}
 				info.Frames = append(info.Frames, frame)
 
 				for j := 0; j < int(rawFrame.Delay); j++ {
