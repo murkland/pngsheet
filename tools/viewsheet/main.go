@@ -100,8 +100,8 @@ func (g *game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0xff, 0x00, 0xff, 0xff})
 
 	opts := &ebiten.DrawImageOptions{}
-	opts.GeoM.Translate(float64(288/2-frame.OriginX), float64(256/2-frame.OriginY))
-	screen.DrawImage(g.img.SubImage(image.Rect(frame.Left, frame.Top, frame.Right, frame.Bottom)).(*ebiten.Image), opts)
+	opts.GeoM.Translate(float64(288/2-frame.Origin.X), float64(256/2-frame.Origin.Y))
+	screen.DrawImage(g.img.SubImage(frame.Rect).(*ebiten.Image), opts)
 	palInfo := "not paletted"
 	if g.palette != nil {
 		palInfo = fmt.Sprintf("palette: %03d/%03d", g.paletteIdx+1, len(g.palette)/16)
