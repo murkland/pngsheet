@@ -62,12 +62,8 @@ func frame(anim *pngsheet.Animation, t int) *pngsheet.Frame {
 		return nil
 	}
 
-	if t >= len(anim.Frames) {
-		if anim.IsLooping {
-			t %= len(anim.Frames)
-		} else {
-			t = len(anim.Frames) - 1
-		}
+	if t >= len(anim.Frames) && anim.IsLooping {
+		t %= len(anim.Frames)
 	}
 
 	return anim.Frames[t]
@@ -177,18 +173,25 @@ func (g *game) Update() error {
 		}
 	}
 
+	anim := g.info.Animations[g.animIdx]
 	if inpututil.IsKeyJustPressed(ebiten.KeyPeriod) {
-		g.elapsed++
+		g.paused = true
+		if anim.IsLooping || g.elapsed < len(anim.Frames)-1 {
+			g.elapsed++
+		}
 	}
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyComma) {
+		g.paused = true
 		if g.elapsed > 0 {
 			g.elapsed--
 		}
 	}
 
 	if !g.paused {
-		g.elapsed++
+		if anim.IsLooping || g.elapsed < len(anim.Frames)-1 {
+			g.elapsed++
+		}
 	}
 
 	return nil
