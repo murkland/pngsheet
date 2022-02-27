@@ -76,6 +76,7 @@ func frame(anim *pngsheet.Animation, t int) *pngsheet.Frame {
 type game struct {
 	fontFace font.Face
 
+	paused     bool
 	origImg    image.Image
 	info       *pngsheet.Info
 	palette    color.Palette
@@ -105,7 +106,7 @@ func (g *game) Draw(screen *ebiten.Image) {
 	if g.palette != nil {
 		palInfo = fmt.Sprintf("palette: %03d/%03d", g.paletteIdx+1, len(g.palette)/16)
 	}
-	text.Draw(screen, fmt.Sprintf("%s\nanim: %d\nframe: %d", palInfo, g.animIdx, frame.Index), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
+	text.Draw(screen, fmt.Sprintf("%s\nanim: %d\nelapsed: %d\nframe: %d", palInfo, g.animIdx, g.elapsed, frame.Index), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
 }
 
 func (g *game) shiftPalette(i int) {
@@ -124,7 +125,9 @@ func (g *game) swapPalette() {
 }
 
 func (g *game) Update() error {
-	g.elapsed++
+	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		g.paused = !g.paused
+	}
 
 	if g.img == nil {
 		g.img = ebiten.NewImageFromImage(g.origImg)
@@ -172,6 +175,20 @@ func (g *game) Update() error {
 		if g.palette != nil {
 			g.swapPalette()
 		}
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyPeriod) {
+		g.elapsed++
+	}
+
+	if inpututil.IsKeyJustPressed(ebiten.KeyComma) {
+		if g.elapsed > 0 {
+			g.elapsed--
+		}
+	}
+
+	if !g.paused {
+		g.elapsed++
 	}
 
 	return nil
