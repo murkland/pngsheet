@@ -53,8 +53,16 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
+	markerImg := ebiten.NewImage(5, 5)
+	for x := 0; x < 5; x++ {
+		markerImg.Set(x, 2, color.RGBA{0, 255, 0, 255})
+	}
+	for y := 0; y < 5; y++ {
+		markerImg.Set(2, y, color.RGBA{0, 255, 0, 255})
+	}
+
 	log.Printf("palette size: %d, alt palette size: %d", len(palette), len(altPalette))
-	ebiten.RunGame(&game{fontFace: fontFace, origImg: img, info: info, palette: palette, altPalette: altPalette})
+	ebiten.RunGame(&game{fontFace: fontFace, origImg: img, info: info, palette: palette, altPalette: altPalette, markerImg: markerImg})
 }
 
 func frame(anim *pngsheet.Animation, t int) *pngsheet.Frame {
@@ -83,6 +91,8 @@ type game struct {
 	frameIdx   int
 	animIdx    int
 	img        *ebiten.Image
+
+	markerImg *ebiten.Image
 }
 
 func (g *game) Layout(outsideWidth int, outsideHeight int) (int, int) {
@@ -102,6 +112,9 @@ func (g *game) Draw(screen *ebiten.Image) {
 	if g.palette != nil {
 		palInfo = fmt.Sprintf("palette: %03d/%03d", g.paletteIdx+1, len(g.palette)/16)
 	}
+	opts2 := &ebiten.DrawImageOptions{}
+	opts2.GeoM.Translate(float64(288/2-2), float64(256/2-2))
+	screen.DrawImage(g.markerImg, opts2)
 	text.Draw(screen, fmt.Sprintf("%s\nanim: %d\nelapsed: %d\nframe: %d", palInfo, g.animIdx, g.elapsed, frame.Index), g.fontFace, 4, 12+4, color.RGBA{0x00, 0xff, 0x00, 0xff})
 }
 
