@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.2.5
-	github.com/murkland/pngchunks v0.0.0-20220219084845-29962d363499
+	github.com/murkland/pngchunks v0.0.0-20220305211659-3f322c254e68
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 )
 
