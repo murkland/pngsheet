@@ -1,10 +1,10 @@
-module github.com/yumland/pngsheet
+module github.com/murkland/pngsheet
 
 go 1.18
 
 require (
 	github.com/hajimehoshi/ebiten/v2 v2.2.5
-	github.com/yumland/pngchunks v0.0.0-20220219084845-29962d363499
+	github.com/murkland/pngchunks v0.0.0-20220219084845-29962d363499
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 )
 
